@@ -8,7 +8,6 @@ mode = input[0]
 
 nodes = {}
 nodes_end_A = {}
-nodes_end_Z = {}
 
 for line in input[2:]:
     line = line.split()
@@ -20,9 +19,6 @@ for line in input[2:]:
 
     if node_name[-1] == "A":
         nodes_end_A[node_name] = (node_left, node_right)
-
-    if node_name[-1] == "Z":
-        nodes_end_Z[node_name] = (node_left, node_right)
 
 count_for_each_origin = []
 
