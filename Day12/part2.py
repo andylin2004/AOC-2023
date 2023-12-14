@@ -1,52 +1,56 @@
 from collections import deque
+from functools import cache
 
-def spring_eval(spring, broken, indx=0):
-    if indx == len(spring):
-        # print(spring)
-        actually_broken = 0
-        needs_broken = None
-        in_zone = False
+cached = {}
 
-        for spring_element in spring:
-            if spring_element == "#":
-               actually_broken += 1
-               if not in_zone:
-                    in_zone = True
-                    if len(broken) > 0:
-                        needs_broken = broken.popleft()
-                    else:
-                        return 0
-            else:
-                if in_zone:
-                    in_zone = False
-                    if actually_broken != needs_broken:
-                        return 0
-                    
-                    actually_broken = 0
-                    needs_broken = None
+def spring_eval(spring, cur_broken, indx=0, num_hash=0, seg_start=0):
+    # print(spring, cur_broken, indx, num_hash, seg_start)
 
-        if len(broken) == 0 and (actually_broken == needs_broken or needs_broken is None):
-            # print(spring)
+    if (spring[seg_start:], cur_broken) in cached:
+        return cached[(spring[seg_start:], cur_broken)]
+    
+    if indx >= len(spring):
+        if len(cur_broken) == 0 and num_hash == 0:
+            # print("yay")
             return 1
-        return 0
-    else:
-        while indx < len(spring) and spring[indx] != "?":
-            indx += 1
-
-        if indx < len(spring) and spring[indx] == "?":
-            left = spring.copy()
-            right = spring.copy()
-            left[indx] = "."
-            right[indx] = "#"
-
-        if indx >= len(spring):
-            return spring_eval(spring, broken.copy(), indx)
         else:
-            total = spring_eval(left, broken, indx)
-            if right.count("#") <= sum(broken):
-                total += spring_eval(right, broken, indx)
+            # print("oof")
+            return 0
+    
+    if spring[indx] == "#":
+        if len(cur_broken) == 0 or (num_hash == 0 and indx-1 >= 0 and spring[indx-1] == "#" and seg_start != indx + 1):
+            return 0
+        else:
+            num_hash += 1
+    elif spring[indx] == "?":
+        # print("hehe")
+        if num_hash == 0 and indx > 0 and spring[indx-1] == "#":
+            # print(spring, "####!!!")
+            spring = spring.replace("?", ".", 1)
 
-            return total
+            result = spring_eval(spring, cur_broken, indx + 1, num_hash, indx+1)
+
+            cached[(spring[indx+1:], cur_broken[1:])] = result
+
+            return result
+        else:
+            left = spring.replace("?", "#", 1)
+            right = spring.replace("?", ".", 1)
+            # print(left, right)
+
+            return spring_eval(left, cur_broken, indx, num_hash, seg_start) + spring_eval(right, cur_broken, indx, num_hash, seg_start)
+    elif spring[indx] == ".":
+        if num_hash > 0:
+            return 0
+        
+    if len(cur_broken) > 0 and cur_broken[0] == num_hash:
+        result = spring_eval(spring, cur_broken[1:], indx+1, 0, indx+1)
+
+        cached[(spring[indx+1:], cur_broken[1:])] = result
+
+        return result
+    else:
+        return spring_eval(spring, cur_broken, indx+1, num_hash, seg_start)
 
 f = open("input.txt", 'r')
 # f = open("test_input.txt", 'r')
@@ -57,16 +61,19 @@ springs = []
 
 for line in input:
     line = line.split()
-    broken_groupings.append(deque(int(x) for x in line[1].split(",") * 5))
-    springs.append(deque())
-    for i in range(5):
-        springs[-1].extend(x for x in line[0])
-        if i < 4:
-            springs[-1].append("?")
+    broken_groupings.append(tuple(int(x) for x in line[1].split(",") * 5))
+    springs.append(((line[0] + "?") * 5)[:-1])
+    # broken_groupings.append(tuple(int(x) for x in line[1].split(",")))
+    # springs.append(line[0])
 
 total_combo = 0
 
 for (spring, broken_grouping, i) in zip(springs, broken_groupings, range(len(springs))):
-    total_combo += spring_eval(spring, broken_grouping)
+    
+    e = spring_eval(spring, broken_grouping)
+    # print(spring, e)
+    total_combo += e
+    cached.clear()
+    # print(total_combo)
 
 print(total_combo)
