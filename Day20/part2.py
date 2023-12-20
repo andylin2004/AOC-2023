@@ -78,9 +78,9 @@ occurences = {}
 for feed in rx_pipe_feeds:
     occurences[feed] = []
 
-totalInterval = 0
 rxFound = False
-for i in range(20000):
+i = 0
+while min([len(x) for x in occurences.values()]) == 0:
     curDelivery = {(broadcaster, ("", LOW))}
 
     while len(curDelivery) > 0:
@@ -134,9 +134,7 @@ for i in range(20000):
 
         curDelivery = nextDelivery
 
-    totalInterval += 1
-    # if min([len(x) for x in occurences.values()]) > 0:
-    #     break
+    i += 1
 
 print(occurences)
 
